@@ -1,227 +1,185 @@
+import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Services.UPower
+import Quickshell.Networking
+import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
-import Quickshell.Io
 
 PanelWindow {
-    id: rootBar
-
     color: "transparent"
-    
+    implicitHeight: 30
+
     anchors {
         top: true
         left: true
         right: true
     }
 
-    implicitHeight: 32
+    margins {
+        top: 10
+        left: 10
+        right: 10
+    }
 
-    Rectangle {
+    RowLayout {
         anchors.fill: parent
-        color: "#cc141414"
-        height: 30
 
-        Rectangle {
+        Row {
             anchors {
                 left: parent.left
-                right: parent.right
-                bottom: parent.bottom
+                verticalCenter: parent.verticalCenter
             }
 
-            height: 1
-            color: "#99123a"
+            spacing: 5
+            Repeater {
+                model: Hyprland.workspaces
+
+                Rectangle {
+                    required property var modelData
+                    height: workspaces_text.implicitHeight + 10
+                    width: height
+                    color: modelData.focused ? "#99123a" : "#99141414"
+                    radius: height / 2
+                    border {
+                        color: "#99123a"
+                        width: 1
+                    }
+
+                    Text {
+                        id: workspaces_text
+                        text: modelData.name
+                        font {
+                            pixelSize: 13
+                            family: "JetBrains Mono"
+                        }
+                        color: modelData.focused ? "#141414" : "#99123a"
+                        anchors.centerIn: parent
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            Hyprland.dispatch("hl.dsp.focus({workspace = '" + modelData.id + "'})");
+                        }
+                    }
+                }
+            }
+        }
+        
+        Rectangle {
+            height: time.implicitHeight + 10
+            width: 50
+            radius: height / 2
+            color: "#99141414"
+            border {
+                color: "#99123a"
+                width: 1
+            }
+
+            anchors.centerIn: parent
+
+            SystemClock {
+                id: clock
+                precision: SystemClock.Minutes
+            }
+
+            Text {
+                id: time
+                font.pixelSize: 13
+                font.family: "JetBrains Mono"
+                color: "#99123a"
+                anchors.centerIn: parent
+                text: Qt.formatDateTime(clock.date, "hh:mm")
+            }
         }
 
-        RowLayout {
+        Row {
             anchors {
-                fill: parent
-                leftMargin: 8
-                rightMargin: 12
+                right: parent.right
+                verticalCenter: parent.verticalCenter
             }
-            
-            spacing: 0
 
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            spacing: 5
 
-                RowLayout {
-                    anchors{
-                        left: parent.left
-                        verticalCenter: parent.verticalCenter
-                    }
-                    spacing: 8
-
-                    Repeater {
-                        model: Hyprland.workspaces
-
-                        delegate: Rectangle {
-                            width: 38
-                            height: 20
-                            radius: 6
-                            color: modelData.id === Hyprland.focusedWorkspace.id ? "#99123a" : "#1a1a1a"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.id
-                                color: modelData.id === Hyprland.focusedWorkspace.id ? "#1a1a1a" : "#99123a"
-                                font.bold: modelData.id === Hyprland.focusedWorkspace.id ? true : false
-                                font.pixelSize: 14
-                                font.family: "FontAwesome"
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    Hyprland.dispatch("hl.dsp.focus({workspace = '" + modelData.id + "'})");
-                                }
-                            }
-                        }
-                    }
+            Rectangle {
+                anchors {
+                    verticalCenter: parent.verticalCenter
                 }
-            }
 
-            RowLayout {
-                Layout.alignment: Qt.AlignCenter
-                spacing: 10
-
-                Text {
-                    id: clockText
+                height: wifi.implicitHeight + 10
+                width: wifi.implicitWidth + 20
+                color: "#99141414"
+                radius: height / 2
+                border {
+                    width: 1
                     color: "#99123a"
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: "FontAwesome"
                 }
 
                 Text {
-                    id: dateText
+                    id: wifi
+                    text: "..."
+                    anchors.centerIn: parent
+                    font.pixelSize: 13
+                    font.family: "JetBrains Mono"
                     color: "#99123a"
-                    font.pixelSize: 14
-                    font.family: "FontAwesome"
+                }
+            }
+
+            Rectangle {
+                anchors {
+                    verticalCenter: parent.verticalCenter
                 }
 
-                Timer {
-                    interval: 1000
-                    running: true
-                    repeat: true
-                    triggeredOnStart: true
-                    onTriggered: {
-                        var currentDate = new Date();
+                height: battery.implicitHeight + 10
+                width: 75
+                radius: height / 2
+                color: "#99141414"
 
-                        clockText.text = currentDate.toLocaleTimeString(Qt.locale(), "HH:mm:ss");
-                        dateText.text = currentDate.toLocaleDateString(Qt.locale(), "ddd, MMM d, yyyy");
+                border {
+                    color: "#99123a"
+                }
+
+                Text {
+                    id: battery
+                    anchors.centerIn: parent
+                    text: {
+                        const battery = UPower.displayDevice.percentage * 100;
+                        switch(true) {
+                            case (battery > 75):
+                                return `\uf240 ${battery}%`;
+                            case (battery > 50):
+                                return `\uf241 ${battery}%`;
+                            case (battery > 25):
+                                return `\uf242 ${battery}%`;
+                            case (battery > 0):
+                                return `\uf243 ${battery}%`;
+                        }
+                    }
+                    font.pixelSize: 13
+                    font.family: "JetBrains Mono"
+                    color: "#99123a"
+                }
+            }
+
+            Process {
+                id: wifiProcess
+                command: ["sh", "-c", "nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2 || echo ''"]
+                running: true
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        var ssid = text ? text.trim() : "";
+                        wifi.text = ssid.length > 0 ? `\uf1eb ${ssid}` : `\ue654 Disconnected`;
                     }
                 }
             }
 
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                RowLayout {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 12
-
-                    RowLayout {
-                        spacing: 4
-                        Text {
-                            text: ""
-                            color: "#99123a"
-                            font.pixelSize: 14
-                            font.family: "FontAwesome"
-                        }
-                        Text {
-                            id: wifiText
-                            text: "Checking..."
-                            color: "#99123a"
-                            font.pixelSize: 14
-                            font.family: "FontAwesome"
-                        }
-    
-                    }
-
-                    RowLayout {
-                        spacing: 4
-                        Text {
-                            text: ""
-                            color: "#99123a"
-                            font.pixelSize: 14
-                            font.family: "FontAwesome"
-                        }
-                        Text {
-                            id: batteryText
-                            text: "100%"
-                            color: "#99123a"
-                            font.pixelSize: 14
-                            font.family: "FontAwesome"
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 4
-                        Text {
-                            id: volumeIcon
-                            text: root.isMuted ? "\uf026" : "\uf028"
-                            color: "#99123a"
-                            font.pixelSize: 18
-                            font.family: "FontAwesome"
-                        }
-                        Text {
-                            id: volumeText
-                            text: root.isMuted ? "" : Math.round(root.volumeFloat * 100) + "%"
-                            color: "#99123a"
-                            font.pixelSize: 14
-                            font.family: "FontAwesome"
-                        }
-                    }
-
-                    // Polls WiFi SSID via nmcli every 5 seconds
-                    Process {
-                        id: wifiProcess
-                        command: ["sh", "-c", "nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2 || echo ''"]
-                        running: true
-                        stdout: StdioCollector {
-                            onStreamFinished: {
-                                var ssid = text ? text.trim() : "";
-                                wifiText.text = ssid.length > 0 ? ssid : "Disconnected";
-                            }
-                        }
-                    }
-
-                    Timer {
-                        interval: 5000
-                        running: true
-                        repeat: true
-                        onTriggered: {
-                            wifiProcess.running = false;
-                            wifiProcess.running = true;
-                        }
-                    }
-
-                    Process {
-                        id: batteryProcess
-                        command: ["sh", "-c", "cat /sys/class/power_supply/BAT*/capacity 2>/dev/null || echo 'N/A'"]
-                        running: true
-                        stdout: StdioCollector {
-                            onStreamFinished: {
-                                var cap = text ? text.trim() : "";
-                                batteryText.text = cap !== "N/A" && cap !== "" ? cap + "%" : "No Battery";
-                            }
-                        }
-                    }
-
-                    Timer {
-                        interval: 10000
-                        running: true
-                        repeat: true
-                        onTriggered: {
-                            batteryProcess.running = false;
-                            batteryProcess.running = true;
-                        }
-                    }
+            Timer {
+                interval: 5000
+                running: true
+                repeat: true
+                onTriggered: {
+                    wifiProcess.running = false;
+                    wifiProcess.running = true;
                 }
             }
         }

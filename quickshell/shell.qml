@@ -26,6 +26,7 @@ Scope {
 
     property bool showPowerMenu: false
     property bool soundUpdated: false
+    property bool showNetworkPanel: true
 
     GlobalShortcut {
         name: "powerMenu"
