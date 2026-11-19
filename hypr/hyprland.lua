@@ -15,13 +15,18 @@ local directions = {
 hl.on("hyprland.start", function()
     hl.exec_cmd("hyprpaper")
     hl.exec_cmd("quickshell")
+    hl.exec_cmd(terminal)
 end)
+
+--hl.bind(mainMod .. " + S", hl.dsp.focus({ workspace = "special:s" }))
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(editor))
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(editor))
+hl.bind(mainMod .. " + O", hl.dsp.exec_cmd("./AppImages/Obsidian-1.14.5.AppImage --no-sandbox"))
+hl.bind("XF86Calculator", hl.dsp.exec_cmd("qalculate"))
 
 hl.bind("XF86AudioMute", function()
     hl.dispatch(hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
@@ -38,7 +43,11 @@ hl.bind("XF86AudioLowerVolume", function()
     hl.dispatch(hl.dsp.global("quickshell:updateSound"))
 end)
 
-hl.bind("SUPER + ESCAPE", hl.dsp.global("quickshell:powerMenu"))
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +5%"))
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"))
+
+hl.bind(mainMod .. " + ESCAPE", hl.dsp.global("quickshell:powerMenu"))
+hl.bind(mainMod .. " + TAB", hl.dsp.global("quickshell:topBar"))
 
 hl.bind(mainMod .. " + P", hl.dsp.window.fullscreen({ action = "toggle", mode = 0 }))
 hl.bind(mainMod .. " + K", hl.dsp.window.close())
@@ -119,6 +128,9 @@ hl.config({
 
             new_optimizations = true
         }
+    },
+    xwayland = {
+        force_zero_scaling = true
     }
 })
 
@@ -138,4 +150,11 @@ hl.animation({
     enabled = true,
     speed = 2,
     bezier = "easeOut"
+})
+
+hl.monitor({
+    output = "eDP-1",
+    mode = "1920x1080@165",
+    position = "0x0",
+    scale = 1,
 })

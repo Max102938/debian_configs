@@ -7,8 +7,10 @@ import QtQuick
 import QtQuick.Layouts
 
 PanelWindow {
+    id: topBarRoot
     color: "transparent"
     implicitHeight: 30
+    visible: root.showTopBar
 
     anchors {
         top: true
@@ -36,6 +38,7 @@ PanelWindow {
                 model: Hyprland.workspaces
 
                 Rectangle {
+                    visible: modelData.id > 0
                     required property var modelData
                     height: workspaces_text.implicitHeight + 10
                     width: height
@@ -48,7 +51,7 @@ PanelWindow {
 
                     Text {
                         id: workspaces_text
-                        text: modelData.name
+                        text: modelData.id
                         font {
                             pixelSize: 13
                             family: "JetBrains Mono"
@@ -68,7 +71,7 @@ PanelWindow {
         
         Rectangle {
             height: time.implicitHeight + 10
-            width: 50
+            width: 60
             radius: height / 2
             color: "#99141414"
             border {
@@ -102,6 +105,45 @@ PanelWindow {
             spacing: 5
 
             Rectangle {
+                id: lessonRoot
+
+                visible: wifiRoot.ssid === "htlwlan"
+
+                property string lessonTime: ""
+                property string lessonName: ""
+                property bool hasLesson: false
+
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                }
+
+                height: lesson.implicitHeight + 10
+                width: lesson.implicitWidth + 20
+                color: "#99141414"
+                radius: height / 2
+                border {
+                    width: 1
+                    color: "#99123a"
+                }
+
+                Text {
+                    id: lesson
+                    text: {
+                        if (!lessonRoot.hasLesson) return lessonRoot.lessonName;
+                        const base = `${lessonRoot.lessonTime} - ${lessonRoot.lessonName}`;
+                        return `${base}`
+                    }
+                    anchors.centerIn: parent
+                    font.pixelSize: 13
+                    font.family: "JetBrains Mono"
+                    color: "#99123a"
+                }
+            }
+
+            Rectangle {
+                id: wifiRoot
+
+                property string ssid: ""
                 anchors {
                     verticalCenter: parent.verticalCenter
                 }
@@ -143,7 +185,7 @@ PanelWindow {
                     id: battery
                     anchors.centerIn: parent
                     text: {
-                        const battery = UPower.displayDevice.percentage * 100;
+                        const battery = Math.round(UPower.displayDevice.percentage * 100);
                         switch(true) {
                             case (battery > 75):
                                 return `\uf240 ${battery}%`;
@@ -162,12 +204,43 @@ PanelWindow {
             }
 
             Process {
+                id: lessonProcess
+                command: [Quickshell.env("HOME") + "/.local/bin/next-lesson"]
+                running: true
+
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        try {
+                            const data = JSON.parse(this.text.trim());
+                            lessonRoot.hasLesson = data.hasLesson ?? false;
+                            lessonRoot.lessonTime = data.time ?? "";
+                            lessonRoot.lessonName = data.name ?? "Unknown";
+                        } catch (e) {
+                            lessonRoot.hasLesson = false;
+                            lessonRoot.lessonName = "Parse error";
+                        }
+                    }
+                }
+            }
+
+            Timer {
+                interval: 300000
+                running: true
+                repeat: true
+                onTriggered: {
+                    lessonProcess.running = false
+                    lessonProcess.running = true
+                }
+            }
+
+            Process {
                 id: wifiProcess
                 command: ["sh", "-c", "nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2 || echo ''"]
                 running: true
                 stdout: StdioCollector {
                     onStreamFinished: {
                         var ssid = text ? text.trim() : "";
+                        wifiRoot.ssid = ssid;
                         wifi.text = ssid.length > 0 ? `\uf1eb ${ssid}` : `\ue654 Disconnected`;
                     }
                 }

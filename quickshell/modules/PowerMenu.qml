@@ -8,6 +8,7 @@ import Quickshell.Io
 PanelWindow {
     id: rootPower
     visible: root.showPowerMenu
+    exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
 

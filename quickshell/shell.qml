@@ -26,19 +26,25 @@ Scope {
 
     property bool showPowerMenu: false
     property bool soundUpdated: false
-    property bool showNetworkPanel: true
+    property bool showTopBar: true
 
     GlobalShortcut {
         name: "powerMenu"
         onPressed: {
             root.showPowerMenu = !root.showPowerMenu;
         }
-    }
+    }	
 
     TopBar {}
     PowerMenu {}
     SoundBar {}
 
+    GlobalShortcut {
+        name: "topBar"
+        onPressed: {
+            root.showTopBar = !root.showTopBar;
+        }
+    }
     GlobalShortcut {
         name: "updateSound"
         onPressed: root.volumeKeyPressed()
